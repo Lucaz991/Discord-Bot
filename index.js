@@ -1,4 +1,10 @@
 require('dotenv').config();
+
+// 🪄 MAGIA PARA RENDER: Forzamos a que use el internet tradicional (IPv4)
+// porque Render a veces se hace un nudo con IPv6 y los canales de Discord.
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
+
 const express = require('express');
 const app = express();
 const puerto = process.env.PORT || 3000;
@@ -12,10 +18,9 @@ app.listen(puerto, () => {
 });
 
 const { Client, GatewayIntentBits } = require('discord.js');
-const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, getVoiceConnection } = require('@discordjs/voice');
+const { joinVoiceChannel, createAudioPlayer, createAudioResource, getVoiceConnection } = require('@discordjs/voice');
 const googleTTS = require('google-tts-api');
 
-// Configuramos los permisos que necesita el bot
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -25,14 +30,12 @@ const client = new Client({
     ]
 });
 
-// Evento: Cuando el bot se enciende correctamente
-client.on('ready', () => {
+// Evento: Cuando el bot se enciende correctamente (Actualizado a clientReady)
+client.on('clientReady', () => {
     console.log(`¡Bot encendido y listo para unirse a los Cuacks! Logueado como: ${client.user.tag}`);
 });
 
-// Evento: Cuando alguien escribe un mensaje
 client.on('messageCreate', async (message) => {
-    // Evitamos que el bot se responda a sí mismo
     if (message.author.bot) return;
 
     // ==========================================
@@ -47,43 +50,32 @@ client.on('messageCreate', async (message) => {
         }
 
         try {
-            // 1. Transformamos el texto en audio
             const urlAudio = googleTTS.getAudioUrl(textoALeer, {
                 lang: 'es', 
                 slow: false,
                 host: 'https://translate.google.com',
             });
 
-            // 2. Revisamos si el bot YA ESTÁ en el canal para no hacer el ruido de entrar de nuevo
             let conexion = getVoiceConnection(message.guild.id);
 
-            // Si no estaba, lo hacemos entrar
             if (!conexion) {
                 conexion = joinVoiceChannel({
                     channelId: canalDeVoz.id,
                     guildId: message.guild.id,
                     adapterCreator: message.guild.voiceAdapterCreator,
                 });
+
+                // 🛡️ ESCUDO: Si Render tiene un micro-corte de red, lo atrapamos y el bot sigue vivo.
+                conexion.on('error', error => {
+                    console.error("Micro-corte de red ignorado:", error.message);
+                });
             }
 
-            // === 🕵️‍♂️ INICIO DE LOS RAYOS X 🕵️‍♂️ ===
-            conexion.on('stateChange', (oldState, newState) => {
-                console.log(`[RED] Conexión de Discord: ${oldState.status} -> ${newState.status}`);
-            });
-            // ======================================
-
-            // 3. Preparamos el reproductor y le mandamos el audio
             const reproductor = createAudioPlayer();
-
-            // === 🕵️‍♂️ MÁS RAYOS X 🕵️‍♂️ ===
-            reproductor.on('stateChange', (oldState, newState) => {
-                console.log(`[AUDIO] Reproductor: ${oldState.status} -> ${newState.status}`);
-            });
 
             reproductor.on('error', error => {
                 console.error("¡ERROR DE AUDIO!", error.message);
             });
-            // ======================================
 
             const recurso = createAudioResource(urlAudio);
 
@@ -111,8 +103,6 @@ client.on('messageCreate', async (message) => {
             message.reply('Pero si ni siquiera estoy en el canal de voz...');
         }
     }
-
 });
 
-// Conexión usando la variable de entorno
 client.login(process.env.DISCORD_TOKEN);
