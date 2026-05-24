@@ -10,6 +10,7 @@ app.get('/', (req, res) => {
 app.listen(puerto, () => {
     console.log(`Servidor fantasma escuchando en el puerto ${puerto}`);
 });
+
 const { Client, GatewayIntentBits } = require('discord.js');
 const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, getVoiceConnection } = require('@discordjs/voice');
 const googleTTS = require('google-tts-api');
@@ -67,6 +68,12 @@ client.on('messageCreate', async (message) => {
 
             // 3. Preparamos el reproductor y le mandamos el audio
             const reproductor = createAudioPlayer();
+
+            // Atrapamos errores específicos que ocurren dentro del reproductor de audio
+            reproductor.on('error', error => {
+                console.error("¡TE ATRAPÉ! El problema del audio es:", error.message);
+            });
+
             const recurso = createAudioResource(urlAudio);
 
             reproductor.play(recurso);
@@ -96,5 +103,5 @@ client.on('messageCreate', async (message) => {
 
 });
 
-// ¡Reemplazá esto con tu Token real!
+// Conexión usando la variable de entorno
 client.login(process.env.DISCORD_TOKEN);
