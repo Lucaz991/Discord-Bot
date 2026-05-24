@@ -66,13 +66,24 @@ client.on('messageCreate', async (message) => {
                 });
             }
 
+            // === 🕵️‍♂️ INICIO DE LOS RAYOS X 🕵️‍♂️ ===
+            conexion.on('stateChange', (oldState, newState) => {
+                console.log(`[RED] Conexión de Discord: ${oldState.status} -> ${newState.status}`);
+            });
+            // ======================================
+
             // 3. Preparamos el reproductor y le mandamos el audio
             const reproductor = createAudioPlayer();
 
-            // Atrapamos errores específicos que ocurren dentro del reproductor de audio
-            reproductor.on('error', error => {
-                console.error("¡TE ATRAPÉ! El problema del audio es:", error.message);
+            // === 🕵️‍♂️ MÁS RAYOS X 🕵️‍♂️ ===
+            reproductor.on('stateChange', (oldState, newState) => {
+                console.log(`[AUDIO] Reproductor: ${oldState.status} -> ${newState.status}`);
             });
+
+            reproductor.on('error', error => {
+                console.error("¡ERROR DE AUDIO!", error.message);
+            });
+            // ======================================
 
             const recurso = createAudioResource(urlAudio);
 
@@ -82,7 +93,7 @@ client.on('messageCreate', async (message) => {
             message.react('🗣️');
 
         } catch (error) {
-            console.error("Error al reproducir el audio:", error);
+            console.error("Error general:", error);
             message.reply('Se me trabó la lengua. Hubo un error al generar la voz.');
         }
     }
