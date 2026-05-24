@@ -1,4 +1,15 @@
 require('dotenv').config();
+const express = require('express');
+const app = express();
+const puerto = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+    res.send('El bot está despierto y vigilando.');
+});
+
+app.listen(puerto, () => {
+    console.log(`Servidor fantasma escuchando en el puerto ${puerto}`);
+});
 const { Client, GatewayIntentBits } = require('discord.js');
 const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, getVoiceConnection } = require('@discordjs/voice');
 const googleTTS = require('google-tts-api');
